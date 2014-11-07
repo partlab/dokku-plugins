@@ -2,7 +2,7 @@
 set -e;
 
 # Check if name is specified
-if [[ $1 == elasticsearch:* ]]; then
+if [[ $1 == mariadb:* ]]; then
     if [[ -z $2 ]]; then
         echo "You must specify an app name"
         exit 1
@@ -20,22 +20,22 @@ if [[ $1 == elasticsearch:* ]]; then
         exit 1
     fi
 
-    PLUGIN_NAME="elasticsearch"
+    PLUGIN_NAME="mariadb"
     CONTAINER_NAME="${PLUGIN_NAME}_${APP}"
     HOST_DIR="$DOKKU_ROOT/$APP/$PLUGIN_NAME"
-    ENVVAR_NAME="ELASTICSEARCH_URL"
+    ENVVAR_NAME="MARIADB"
 fi
 
 case "$1" in
-  elasticsearch:create)
-    # Check if Elasticsearch container is installed
-    IMAGE=$(docker images | grep "partlab/ubuntu-elasticsearch" | awk '{print $3}')
+  mariadb:create)
+    # Check if MariaDB container is installed
+    IMAGE=$(docker images | grep "partlab/ubuntu-mariadb" | awk '{print $3}')
     if [[ -z $IMAGE ]]; then
-        echo "Elasticsearch image not found... Did you run 'dokku plugins-install' ?"
+        echo "MariaDB image not found... Did you run 'dokku plugins-install' ?"
         exit 1
     fi
 
-    # Stop existing container with the same persistent Elasticsearch
+    # Stop existing container with the same persistent MariaDB
     ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
     if [[ ! -z "$ID" ]]; then
         docker stop $ID > /dev/null
@@ -48,21 +48,21 @@ case "$1" in
         mkdir -p $HOST_DIR
         chown -R dokku:dokku $HOST_DIR
     fi
-    VOLUME="$HOST_DIR:/var/lib/elasticsearch"
+    VOLUME="$HOST_DIR:/var/lib/mariadb"
 
     # Launch container
-    docker run -p 9200:9200 -p 9300:9300 -v $VOLUME \ 
-      -name=$CONTAINER_NAME -d partlab/ubuntu-elasticsearch \
-      /usr/local/bin/run
+    docker run -p 3306:3306 -v $VOLUME \
+      -name=$CONTAINER_NAME -d partlab/ubuntu-mariadb \
+      /usr/local/bin/run 
 
     # Link to a potential existing app
-    dokku elasticsearch:link $APP $APP
-    echo "-----> Elasticsearch container created: $CONTAINER_NAME"
+    dokku mariadb:link $APP $APP
+    echo "-----> MariaDB container created: $CONTAINER_NAME"
     sleep 1
-    dokku elasticsearch:info $APP
+    dokku mariadb:info $APP
     ;;
 
-  elasticsearch:delete)
+  mariadb:delete)
     # Stop the container
     ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
     if [[ ! -z $ID ]]; then
@@ -74,22 +74,23 @@ case "$1" in
         rm -rf $HOST_DIR
     fi
 
-    # unlink this container as "elasticsearch"
+    # unlink this container as "mariadb"
     dokku link:delete "$APP" "$CONTAINER_NAME" "$PLUGIN_NAME"
     dokku config:unset "$APP" $ENVVAR_NAME
-    echo "-----> Elasticsearch container deleted: $CONTAINER_NAME"
+    echo "-----> MariaDB container deleted: $CONTAINER_NAME"
     ;;
 
-  elasticsearch:info)
+  mariadb:info)
     ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
     IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
     echo
     echo "       Host: ${IP}"
-    echo "       Private ports: 9200, 9300"
+    echo "       Username: root"
+    echo "       Private ports: 3306"
     echo
     ;;
 
-  elasticsearch:link)
+  mariadb:link)
     if $APP_EXISTS; then
         # Check argument
         if [[ -z $3 ]]; then
@@ -98,29 +99,29 @@ case "$1" in
         fi
         CONTAINER_NAME="${PLUGIN_NAME}_${3}"
 
-        # link this container as "elasticsearch"
+        # link this container as "mariadb"
         dokku link:create "$APP" "$CONTAINER_NAME" "$PLUGIN_NAME"
 
         # figure out IP to set env var
         ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
         IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
-        dokku config:set "$APP" $ENVVAR_NAME="http://${IP}:9200"
+        dokku config:set "$APP" $ENVVAR_NAME="mysql://root@\$MARIADB_PORT_3306_TCP_ADDR:\$MARIADB_PORT_3306_TCP_PORT"
         echo "-----> $APP linked to $CONTAINER_NAME container"
     fi
     ;;
 
-  elasticsearch:logs)
+  mariadb:logs)
     ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
     docker logs $ID | tail -n 100
     ;;
 
   help)
     cat && cat<<EOF
-    elasticsearch:create <app>                      Create a Elasticsearch container
-    elasticsearch:delete <app>                      Delete specified Elasticsearch container
-    elasticsearch:info <app>                        Display container informations
-    elasticsearch:link <app> <container>            Link an app to a Elasticsearch container
-    elasticsearch:logs <app>                        Display last logs from Elasticsearch container
+    mariadb:create <app>                            Create a MariaDB container
+    mariadb:delete <app>                            Delete specified MariaDB container
+    mariadb:info <app>                              Display container informations
+    mariadb:link <app> <container>                  Link an app to a MariaDB container
+    mariadb:logs <app>                              Display last logs from MariaDB container
     cat && cat<<EOF
 EOF
     ;;
