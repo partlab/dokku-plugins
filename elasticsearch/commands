@@ -51,9 +51,8 @@ case "$1" in
     VOLUME="$HOST_DIR:/var/lib/elasticsearch"
 
     # Launch container
-    docker run -p 9200:9200 -p 9300:9300 -v $VOLUME \ 
-      -name=$CONTAINER_NAME -d partlab/ubuntu-elasticsearch \
-      /usr/local/bin/run
+    docker run -p 9200:9200 -p 9300:9300 -v $VOLUME \
+      -name=$CONTAINER_NAME -d partlab/ubuntu-elasticsearch
 
     # Link to a potential existing app
     dokku elasticsearch:link $APP $APP
@@ -121,7 +120,6 @@ case "$1" in
     elasticsearch:info <app>                        Display container informations
     elasticsearch:link <app> <container>            Link an app to a Elasticsearch container
     elasticsearch:logs <app>                        Display last logs from Elasticsearch container
-    cat && cat<<EOF
 EOF
     ;;
 
