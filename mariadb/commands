@@ -51,7 +51,7 @@ case "$1" in
     VOLUME="$HOST_DIR:/var/lib/mariadb"
 
     # Launch container
-    docker run -p 3306:3306 -v $VOLUME \
+    docker run -p 3306:3306 -v $VOLUME -e MARIADB_DATABASE=$APP \
       -name=$CONTAINER_NAME -d partlab/ubuntu-mariadb \
       /usr/local/bin/run 
 
@@ -85,8 +85,9 @@ case "$1" in
     IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
     echo
     echo "       Host: ${IP}"
-    echo "       Username: root"
     echo "       Private ports: 3306"
+    echo "       Username: root"
+    echo "       Database: ${APP}"
     echo
     ;;
 
@@ -105,7 +106,7 @@ case "$1" in
         # figure out IP to set env var
         ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
         IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
-        dokku config:set "$APP" $ENVVAR_NAME="mysql://root@\$MARIADB_PORT_3306_TCP_ADDR:\$MARIADB_PORT_3306_TCP_PORT"
+        dokku config:set "$APP" $ENVVAR_NAME="mysql://root@\$MARIADB_PORT_3306_TCP_ADDR:\$MARIADB_PORT_3306_TCP_PORT/$APP"
         echo "-----> $APP linked to $CONTAINER_NAME container"
     fi
     ;;
