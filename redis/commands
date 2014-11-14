@@ -52,7 +52,7 @@ case "$1" in
 
     # Launch container
     docker run -p 6379:6379 -v $VOLUME \
-      -name=$CONTAINER_NAME -d partlab/ubuntu-redis
+      --name=$CONTAINER_NAME -d partlab/ubuntu-redis
 
     # Link to a potential existing app
     dokku redis:link $APP $APP

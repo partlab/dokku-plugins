@@ -52,7 +52,7 @@ case "$1" in
 
     # Launch container
     docker run -p 3306:3306 -v $VOLUME -e MARIADB_DATABASE=$APP \
-      -name=$CONTAINER_NAME -d partlab/ubuntu-mariadb \
+      --name=$CONTAINER_NAME -d partlab/ubuntu-mariadb \
       /usr/local/bin/run 
 
     # Link to a potential existing app

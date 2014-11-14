@@ -52,7 +52,7 @@ case "$1" in
 
     # Launch container
     docker run -p 9200:9200 -p 9300:9300 -v $VOLUME \
-      -name=$CONTAINER_NAME -d partlab/ubuntu-elasticsearch
+      --name=$CONTAINER_NAME -d partlab/ubuntu-elasticsearch
 
     # Link to a potential existing app
     dokku elasticsearch:link $APP $APP
