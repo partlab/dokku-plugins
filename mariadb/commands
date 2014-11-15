@@ -21,6 +21,7 @@ if [[ $1 == mariadb:* ]]; then
     fi
 
     PLUGIN_NAME="mariadb"
+    DOCKER_IMAGE=$PLUGIN_NAME/$APP
     CONTAINER_NAME="${PLUGIN_NAME}_${APP}"
     HOST_DIR="$DOKKU_ROOT/$APP/$PLUGIN_NAME"
     ENVVAR_NAME="DATABASE_URL"
@@ -36,10 +37,16 @@ case "$1" in
     fi
 
     # Stop existing container with the same persistent MariaDB
-    ID=$(docker ps | grep "$CONTAINER_NAME" | awk '{print $1}')
+    ID=$(docker ps | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     if [[ ! -z "$ID" ]]; then
         docker stop $ID > /dev/null
     fi
+
+    # Fork docker image
+    ID=$(docker run -d partlab/ubuntu-mariadb /bin/bash "exit 0")
+    docker wait $ID > /dev/null
+    IMAGE=$(docker commit $ID)
+    docker tag $IMAGE $DOCKER_IMAGE
 
     # Check if an existing DB volume exists
     if [[ -d $HOST_DIR ]]; then
@@ -51,9 +58,9 @@ case "$1" in
     VOLUME="$HOST_DIR:/var/lib/mariadb"
 
     # Launch container
-    docker run -p 3306:3306 -v $VOLUME -e MARIADB_DATABASE=$APP \
-      --name=$CONTAINER_NAME -d partlab/ubuntu-mariadb \
-      /usr/local/bin/run 
+    docker run -p 172.17.42.1::3306 -v $VOLUME -e MARIADB_DATABASE=$APP \
+      --name=$CONTAINER_NAME -d $DOCKER_IMAGE \
+      /usr/local/bin/run
 
     # Link to a potential existing app
     dokku mariadb:link $APP $APP
@@ -64,7 +71,7 @@ case "$1" in
 
   mariadb:delete)
     # Stop the container
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+    ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     if [[ ! -z $ID ]]; then
         docker stop $ID > /dev/null
         docker rm $ID  > /dev/null
@@ -81,13 +88,10 @@ case "$1" in
     ;;
 
   mariadb:info)
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
-    IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
     echo
-    echo "       Host: ${IP}"
-    echo "       Private ports: 3306"
-    echo "       Username: root"
-    echo "       Database: ${APP}"
+    echo "       Docker image:   ${PLUGIN_NAME}/${APP}"
+    echo "       Container name: ${CONTAINER_NAME}"
+    echo "       Database:       ${APP}"
     echo
     ;;
 
@@ -105,14 +109,14 @@ case "$1" in
 
         # figure out IP to set env var
         ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
-        IP=$(docker inspect $ID | grep IPAddress | cut -d '"' -f 4)
-        dokku config:set "$APP" $ENVVAR_NAME="mysql://root@\$MARIADB_PORT_3306_TCP_ADDR:\$MARIADB_PORT_3306_TCP_PORT/$APP"
+        PORT=$(docker port $ID 3306 | sed 's/172.17.42.1://')
+        dokku config:set "$APP" $ENVVAR_NAME="mysql2://root@172.17.42.1:$PORT/$APP"
         echo "-----> $APP linked to $CONTAINER_NAME container"
     fi
     ;;
 
   mariadb:logs)
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+    ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest |  awk '{print $1}')
     docker logs $ID | tail -n 100
     ;;
 
