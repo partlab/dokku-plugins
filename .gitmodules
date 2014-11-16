@@ -1,0 +1,3 @@
+[submodule "dokku-rebuild"]
+	path = dokku-rebuild
+	url = https://github.com/scottatron/dokku-rebuild.git
