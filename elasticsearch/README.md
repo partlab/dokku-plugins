@@ -28,10 +28,10 @@ Create a new Container:
 $ dokku elasticsearch:create foo            # Server side
 $ ssh dokku@server elasticsearch:create foo # Client side
 
------> Elasticsearch container created: elasticsearch/foo
+-----> Elasticsearch container created: elasticsearch_foo
 
-       Host: aaa.bbb.ccc.ddd
-       Private ports: 9200, 9300
+       Docker image:   elasticsearch/foo
+       Container name: elasticsearch_foo
 ```
 
 ## Advanced usage

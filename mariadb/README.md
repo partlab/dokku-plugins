@@ -28,11 +28,11 @@ Create a new Container:
 $ dokku mariadb:create foo            # Server side
 $ ssh dokku@server mariadb:create foo # Client side
 
------> mariadb container created: mariadb/foo
+-----> mariadb container created: mariadb_foo
 
-       Host: aaa.bbb.ccc.ddd
-       Username: root
-       Private ports: 3306
+       Docker image:   mariadb/foo
+       Container name: mariadb_foo
+       Database:       foo
 ```
 
 ## Advanced usage

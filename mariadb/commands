@@ -116,7 +116,7 @@ case "$1" in
     ;;
 
   mariadb:logs)
-    ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest |  awk '{print $1}')
+    ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     docker logs $ID | tail -n 100
     ;;
 

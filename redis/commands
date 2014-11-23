@@ -59,7 +59,8 @@ case "$1" in
 
     # Launch container
     docker run -p 172.17.42.1::6379 -v $VOLUME \
-      --name=$CONTAINER_NAME -d $DOCKER_IMAGE
+      --name=$CONTAINER_NAME -d $DOCKER_IMAGE \
+      /usr/bin/redis-server /etc/redis/redis.conf
 
     # Link to a potential existing app
     dokku redis:link $APP $APP
@@ -70,7 +71,7 @@ case "$1" in
 
   redis:delete)
     # Stop the container
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+    ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     if [[ ! -z $ID ]]; then
         docker stop $ID > /dev/null
         docker rm $ID  > /dev/null
@@ -114,7 +115,7 @@ case "$1" in
     ;;
 
   redis:logs)
-    ID=$(docker ps -a | grep "$CONTAINER_NAME" |  awk '{print $1}')
+    ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     docker logs $ID | tail -n 100
     ;;
 

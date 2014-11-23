@@ -28,10 +28,10 @@ Create a new Container:
 $ dokku redis:create foo            # Server side
 $ ssh dokku@server redis:create foo # Client side
 
------> redis container created: redis/foo
+-----> redis container created: redis_foo
 
-       Host: aaa.bbb.ccc.ddd
-       Private ports: 6379
+       Docker image:   redis/foo
+       Container name: redis_foo
 ```
 
 ## Advanced usage
