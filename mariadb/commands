@@ -55,7 +55,7 @@ case "$1" in
         mkdir -p $HOST_DIR
         chown -R dokku:dokku $HOST_DIR
     fi
-    VOLUME="$HOST_DIR:/var/lib/mariadb"
+    VOLUME="$HOST_DIR:/var/lib/mysql"
 
     # Launch container
     docker run -p 172.17.42.1::3306 -v $VOLUME -e MARIADB_DATABASE=$APP \
