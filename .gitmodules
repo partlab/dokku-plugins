@@ -7,3 +7,6 @@
 [submodule "logging-supervisord"]
 	path = logging-supervisord
 	url = https://github.com/sehrope/dokku-logging-supervisord
+[submodule "dokku-link"]
+	path = dokku-link
+	url = https://github.com/rlaneve/dokku-link
