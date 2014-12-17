@@ -1,3 +1,6 @@
 [submodule "dokku-rebuild"]
 	path = dokku-rebuild
 	url = https://github.com/scottatron/dokku-rebuild.git
+[submodule "docker-options"]
+	path = docker-options
+	url = https://github.com/dyson/dokku-docker-options.git
