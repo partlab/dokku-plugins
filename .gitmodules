@@ -4,3 +4,6 @@
 [submodule "docker-options"]
 	path = docker-options
 	url = https://github.com/dyson/dokku-docker-options.git
+[submodule "logging-supervisord"]
+	path = logging-supervisord
+	url = https://github.com/sehrope/dokku-logging-supervisord
