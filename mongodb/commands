@@ -2,7 +2,7 @@
 set -e;
 
 # Check if name is specified
-if [[ $1 == redis:* ]]; then
+if [[ $1 == mongodb:* ]]; then
     if [[ -z $2 ]]; then
         echo "You must specify an app name"
         exit 1
@@ -20,30 +20,30 @@ if [[ $1 == redis:* ]]; then
         exit 1
     fi
 
-    PLUGIN_NAME="redis"
+    PLUGIN_NAME="mongodb"
     DOCKER_IMAGE=$PLUGIN_NAME/$APP
     CONTAINER_NAME="${PLUGIN_NAME}_${APP}"
     HOST_DIR="$DOKKU_ROOT/$APP/$PLUGIN_NAME"
-    ENVVAR_NAME="REDIS_URL"
+    ENVVAR_NAME="MONGO_URL"
 fi
 
 case "$1" in
-  redis:create)
-    # Check if Redis container is installed
-    IMAGE=$(docker images | grep "partlab/ubuntu-redis" | awk '{print $3}')
+  mongodb:create)
+    # Check if mongodb container is installed
+    IMAGE=$(docker images | grep "partlab/ubuntu-mongodb" | awk '{print $3}')
     if [[ -z $IMAGE ]]; then
-        echo "Redis image not found... Did you run 'dokku plugins-install' ?"
+        echo "mongodb image not found... Did you run 'dokku plugins-install' ?"
         exit 1
     fi
 
-    # Stop existing container with the same persistent Redis
+    # Stop existing container with the same persistent mongodb
     ID=$(docker ps | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     if [[ ! -z "$ID" ]]; then
         docker stop $ID > /dev/null
     fi
 
     # Fork docker image
-    ID=$(docker run -d partlab/ubuntu-redis /bin/bash -c "exit 0")
+    ID=$(docker run -d partlab/ubuntu-mongodb /bin/bash -c "exit 0")
     docker wait $ID > /dev/null
     IMAGE=$(docker commit $ID)
     docker tag $IMAGE $DOCKER_IMAGE
@@ -55,21 +55,22 @@ case "$1" in
         mkdir -p $HOST_DIR
         chown -R dokku:dokku $HOST_DIR
     fi
-    VOLUME="$HOST_DIR:/var/lib/redis"
+    VOLUME="$HOST_DIR:/var/lib/mongodb"
 
     # Launch container
-    docker run -p 172.17.42.1::6379 -v $VOLUME \
+    docker run -p 172.17.42.1::27017 -p 172.17.42.1::28017 \
+      -v $VOLUME -e MONGO_DATABASE=$APP \
       --name=$CONTAINER_NAME -d $DOCKER_IMAGE \
-      /usr/bin/redis-server /etc/redis/redis.conf
+      /usr/bin/mongod --smallfiles
 
     # Link to a potential existing app
-    dokku redis:link $APP $APP
-    echo "-----> Redis container created: $CONTAINER_NAME"
+    dokku mongodb:link $APP $APP
+    echo "-----> mongodb container created: $CONTAINER_NAME"
     sleep 1
-    dokku redis:info $APP
+    dokku mongodb:info $APP
     ;;
 
-  redis:delete)
+  mongodb:delete)
     # Stop the container
     ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     if [[ ! -z $ID ]]; then
@@ -81,20 +82,21 @@ case "$1" in
         rm -rf $HOST_DIR
     fi
 
-    # unlink this container as "redis"
+    # unlink this container as "mongodb"
     dokku link:delete "$APP" "$CONTAINER_NAME" "$PLUGIN_NAME"
     dokku config:unset "$APP" $ENVVAR_NAME
-    echo "-----> Redis container deleted: $CONTAINER_NAME"
+    echo "-----> mongodb container deleted: $CONTAINER_NAME"
     ;;
 
-  redis:info)
+  mongodb:info)
     echo
     echo "       Docker image:   ${PLUGIN_NAME}/${APP}"
     echo "       Container name: ${CONTAINER_NAME}"
+    echo "       Database:       ${APP}"
     echo
     ;;
 
-  redis:link)
+  mongodb:link)
     if $APP_EXISTS; then
         # Check argument
         if [[ -z $3 ]]; then
@@ -103,29 +105,29 @@ case "$1" in
         fi
         CONTAINER_NAME="${PLUGIN_NAME}_${3}"
 
-        # link this container as "redis"
+        # link this container as "mongodb"
         dokku link:create "$APP" "$CONTAINER_NAME" "$PLUGIN_NAME"
 
         # figure out IP to set env var
         ID=$(docker ps -a | grep "$CONTAINER_NAME" | awk '{print $1}')
-        PORT=$(docker port $ID 6379 | sed 's/172.17.42.1://')
-        dokku config:set "$APP" $ENVVAR_NAME="redis://172.17.42.1:$PORT"
+        PORT=$(docker port $ID 27017 | sed 's/172.17.42.1://')
+        dokku config:set "$APP" $ENVVAR_NAME="mongodb://root@172.17.42.1:$PORT/$APP"
         echo "-----> $APP linked to $CONTAINER_NAME container"
     fi
     ;;
 
-  redis:logs)
+  mongodb:logs)
     ID=$(docker ps -a | grep "$DOCKER_IMAGE":latest | awk '{print $1}')
     docker logs $ID | tail -n 100
     ;;
 
   help)
     cat && cat<<EOF
-    redis:create <app>                              Create a Redis container
-    redis:delete <app>                              Delete specified Redis container
-    redis:info <app>                                Display container informations
-    redis:link <app> <container>                    Link an app to a Redis container
-    redis:logs <app>                                Display last logs from Redis container
+    mongodb:create <app>                            Create a mongodb container
+    mongodb:delete <app>                            Delete specified mongodb container
+    mongodb:info <app>                              Display container informations
+    mongodb:link <app> <container>                  Link an app to a mongodb container
+    mongodb:logs <app>                              Display last logs from mongodb container
 EOF
     ;;
 

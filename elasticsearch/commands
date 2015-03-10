@@ -43,7 +43,7 @@ case "$1" in
     fi
 
     # Fork docker image
-    ID=$(docker run -d partlab/ubuntu-elasticsearch /bin/bash "exit 0")
+    ID=$(docker run -d partlab/ubuntu-elasticsearch /bin/bash -c "exit 0")
     docker wait $ID > /dev/null
     IMAGE=$(docker commit $ID)
     docker tag $IMAGE $DOCKER_IMAGE
